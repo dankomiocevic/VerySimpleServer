@@ -37,11 +37,6 @@ func ParseMessage(size int, buf []byte) (*message, error) {
 		return nil, errors.New("Malformed slot")
 	}
 
-	// Only one slot for now
-	if slot > 0 {
-		return nil, errors.New("Slot not supported")
-	}
-
 	var value string
 	if command == "w" {
 		value = input[4:]

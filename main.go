@@ -14,9 +14,7 @@ func main() {
 	}
 
 	defer l.Close()
-	slot := memory_slot{value: ""}
-	slots := [1000]Slot{}
-	slots[0] = &slot
+	slots := configureSlots()
 
 	for {
 		conn, err := l.Accept()
@@ -26,6 +24,16 @@ func main() {
 
 		go handleUserConnection(conn, slots)
 	}
+}
+
+func configureSlots() [1000]Slot {
+	slot_0 := memory_slot{value: ""}
+	slot_1 := memory_slot{value: ""}
+	slots := [1000]Slot{}
+	slots[0] = &slot_0
+	slots[1] = &slot_1
+
+	return slots
 }
 
 func handleUserConnection(c net.Conn, slots [1000]Slot) {
@@ -48,6 +56,11 @@ func handleUserConnection(c net.Conn, slots [1000]Slot) {
 		}
 
 		current_slot := slots[msg.slot]
+		if current_slot == nil {
+			c.Write([]byte("e\n"))
+			continue
+		}
+
 		if msg.command == 'w' {
 			current_slot.write(msg.value)
 		}

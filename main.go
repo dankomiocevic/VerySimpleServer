@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"sync"
 )
 
 func main() {
@@ -16,7 +15,6 @@ func main() {
 
 	defer l.Close()
 	slot := memory_slot{value: ""}
-	var mu sync.Mutex
 
 	for {
 		conn, err := l.Accept()
@@ -24,11 +22,11 @@ func main() {
 			return
 		}
 
-		go handleUserConnection(conn, &slot, &mu)
+		go handleUserConnection(conn, &slot)
 	}
 }
 
-func handleUserConnection(c net.Conn, slot *memory_slot, mu *sync.Mutex) {
+func handleUserConnection(c net.Conn, slot *memory_slot) {
 	defer func() {
 		c.Close()
 	}()
@@ -48,9 +46,7 @@ func handleUserConnection(c net.Conn, slot *memory_slot, mu *sync.Mutex) {
 		}
 
 		if msg.command == 'w' {
-			mu.Lock()
 			slot.write(msg.value)
-			mu.Unlock()
 		}
 
 		var sb strings.Builder

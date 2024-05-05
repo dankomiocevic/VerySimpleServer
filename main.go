@@ -15,6 +15,8 @@ func main() {
 
 	defer l.Close()
 	slot := memory_slot{value: ""}
+	slots := [1000]Slot{}
+	slots[0] = &slot
 
 	for {
 		conn, err := l.Accept()
@@ -22,11 +24,11 @@ func main() {
 			return
 		}
 
-		go handleUserConnection(conn, &slot)
+		go handleUserConnection(conn, slots)
 	}
 }
 
-func handleUserConnection(c net.Conn, slot *memory_slot) {
+func handleUserConnection(c net.Conn, slots [1000]Slot) {
 	defer func() {
 		c.Close()
 	}()
@@ -45,14 +47,15 @@ func handleUserConnection(c net.Conn, slot *memory_slot) {
 			continue
 		}
 
+		current_slot := slots[msg.slot]
 		if msg.command == 'w' {
-			slot.write(msg.value)
+			current_slot.write(msg.value)
 		}
 
 		var sb strings.Builder
 		sb.WriteString("v")
 		sb.WriteString(fmt.Sprintf("%03d", msg.slot))
-		sb.WriteString(slot.read())
+		sb.WriteString(current_slot.read())
 		sb.WriteString("\n")
 		c.Write([]byte(sb.String()))
 	}

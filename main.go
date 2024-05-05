@@ -14,7 +14,12 @@ func main() {
 	}
 
 	defer l.Close()
-	slots := configureSlots()
+	conf, err := loadConfig("example_config.yml")
+	if err != nil {
+		return
+	}
+
+	slots := configureSlots(conf)
 
 	for {
 		conn, err := l.Accept()
@@ -24,16 +29,6 @@ func main() {
 
 		go handleUserConnection(conn, slots)
 	}
-}
-
-func configureSlots() [1000]Slot {
-	slot_0 := memory_slot{value: ""}
-	slot_1 := memory_slot{value: ""}
-	slots := [1000]Slot{}
-	slots[0] = &slot_0
-	slots[1] = &slot_1
-
-	return slots
 }
 
 func handleUserConnection(c net.Conn, slots [1000]Slot) {

@@ -50,6 +50,17 @@ func TestWrite(t *testing.T) {
 	}
 }
 
+func TestWriteInOtherSlot(t *testing.T) {
+	conn := runServer(t)
+	defer conn.Close()
+
+	response := sendData(t, conn, "w001Hello\n")
+
+	if response != "v001Hello\n" {
+		t.Fatalf("unexpected server response: %s", response)
+	}
+}
+
 func TestRead(t *testing.T) {
 	conn := runServer(t)
 	defer conn.Close()
@@ -106,7 +117,7 @@ func TestMessageNotTerminated(t *testing.T) {
 	}
 }
 
-func TestReadInAnotherSlot(t *testing.T) {
+func TestReadInANonConfiguredSlot(t *testing.T) {
 	conn := runServer(t)
 	defer conn.Close()
 

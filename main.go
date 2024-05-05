@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"sync"
 )
 
 func main() {
@@ -15,8 +14,7 @@ func main() {
 	}
 
 	defer l.Close()
-	slot := memory_slot{value: ""}
-	var mu sync.Mutex
+	slots := configureSlots()
 
 	for {
 		conn, err := l.Accept()
@@ -24,11 +22,21 @@ func main() {
 			return
 		}
 
-		go handleUserConnection(conn, &slot, &mu)
+		go handleUserConnection(conn, slots)
 	}
 }
 
-func handleUserConnection(c net.Conn, slot *memory_slot, mu *sync.Mutex) {
+func configureSlots() [1000]Slot {
+	slot_0 := memory_slot{value: ""}
+	slot_1 := memory_slot{value: ""}
+	slots := [1000]Slot{}
+	slots[0] = &slot_0
+	slots[1] = &slot_1
+
+	return slots
+}
+
+func handleUserConnection(c net.Conn, slots [1000]Slot) {
 	defer func() {
 		c.Close()
 	}()
@@ -47,16 +55,20 @@ func handleUserConnection(c net.Conn, slot *memory_slot, mu *sync.Mutex) {
 			continue
 		}
 
+		current_slot := slots[msg.slot]
+		if current_slot == nil {
+			c.Write([]byte("e\n"))
+			continue
+		}
+
 		if msg.command == 'w' {
-			mu.Lock()
-			slot.write(msg.value)
-			mu.Unlock()
+			current_slot.write(msg.value)
 		}
 
 		var sb strings.Builder
 		sb.WriteString("v")
 		sb.WriteString(fmt.Sprintf("%03d", msg.slot))
-		sb.WriteString(slot.read())
+		sb.WriteString(current_slot.read())
 		sb.WriteString("\n")
 		c.Write([]byte(sb.String()))
 	}

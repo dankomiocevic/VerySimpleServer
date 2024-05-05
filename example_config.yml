@@ -1,0 +1,10 @@
+# Example config file for VerySimpleServer
+
+slot_000:
+  kind: simple_memory
+
+slot_001:
+  kind: simple_memory
+
+slot_002:
+  kind: simple_memory

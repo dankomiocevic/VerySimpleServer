@@ -18,6 +18,21 @@ func TestConfigureSlot(t *testing.T) {
 	}
 }
 
+func TestConfigureTimeoutSlot(t *testing.T) {
+	config := make(map[interface{}]interface{})
+	slot_one := make(map[string]interface{})
+
+	slot_one["kind"] = "timeout_memory"
+	slot_one["timeout"] = 50
+	config["slot_000"] = slot_one
+
+	response := configureSlots(config)
+
+	if response[0] == nil {
+		t.Fatalf("slot zero not configured: %s", response)
+	}
+}
+
 func TestNotConfigureSlot(t *testing.T) {
 	config := make(map[interface{}]interface{})
 	slot_one := make(map[string]interface{})

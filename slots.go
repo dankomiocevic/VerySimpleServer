@@ -1,27 +1,83 @@
 package main
 
 import (
+	"errors"
+	"net"
 	"sync"
+	"time"
+
+	"github.com/spf13/cast"
 )
 
-type memory_slot struct {
+type Slot interface {
+	read() string
+	write(string, net.Conn) (string, error)
+}
+
+type memorySlot struct {
 	value string
 	mu    sync.Mutex
 }
 
-type Slot interface {
-	read() string
-	write(string) string
-}
-
-func (m *memory_slot) read() string {
+func (m *memorySlot) read() string {
 	return m.value
 }
 
-func (m *memory_slot) write(data string) string {
+func (m *memorySlot) write(data string, from net.Conn) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	m.value = data
+	return m.value, nil
+}
+
+type timeoutSlot struct {
+	value   string
+	owner   net.Conn
+	timeout time.Duration
+	ttl     time.Time
+	mu      sync.Mutex
+}
+
+func (m *timeoutSlot) read() string {
 	return m.value
+}
+
+func (m *timeoutSlot) write(data string, from net.Conn) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	timeNow := time.Now()
+	if timeNow.After(m.ttl) {
+		m.owner = from
+		m.value = data
+		m.ttl = timeNow.Add(m.timeout)
+
+		return m.value, nil
+	}
+
+	if from == m.owner {
+		m.value = data
+		m.ttl = timeNow.Add(m.timeout)
+
+		return m.value, nil
+	}
+
+	return "", errors.New("Permission denied to write slot")
+}
+
+func getSlot(config map[string]interface{}) (Slot, error) {
+	kind := config["kind"]
+
+	if kind == "simple_memory" {
+		return &memorySlot{value: ""}, nil
+	}
+
+	if kind == "timeout_memory" {
+		// TODO: validate this data
+		timeoutConfig, _ := cast.ToIntE(config["timeout"])
+		return &timeoutSlot{value: "", timeout: time.Duration(timeoutConfig) * time.Second, ttl: time.Time{}}, nil
+	}
+
+	return nil, errors.New("Invalid kind of slot")
 }

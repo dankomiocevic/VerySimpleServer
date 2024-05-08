@@ -13,7 +13,7 @@ func runServer(t *testing.T) net.Conn {
 	go main()
 
 	// wait for the TCP Server to start
-	time.Sleep(time.Duration(1000) * time.Millisecond)
+	time.Sleep(time.Duration(100) * time.Millisecond)
 
 	// connect to the TCP Server
 	conn, err := net.Dial("tcp", ":9090")
@@ -123,6 +123,51 @@ func TestReadInANonConfiguredSlot(t *testing.T) {
 
 	response := sendData(t, conn, "r123")
 	if !strings.HasPrefix(response, "e") {
+		t.Fatalf("unexpected server response: %s", response)
+	}
+}
+
+// Tests for timeout memory slot
+
+func TestWriteTimeoutMemory(t *testing.T) {
+	conn := runServer(t)
+	defer conn.Close()
+
+	response := sendData(t, conn, "w003HelloTimeout\n")
+
+	if response != "v003HelloTimeout\n" {
+		t.Fatalf("unexpected server response: %s", response)
+	}
+}
+
+func TestWriteTimeoutNotOwner(t *testing.T) {
+	conn := runServer(t)
+	defer conn.Close()
+
+	sendData(t, conn, "w003HelloOwner\n")
+
+	// connect to the TCP Server
+	connOther, err := net.Dial("tcp", ":9090")
+	if err != nil {
+		t.Fatalf("couldn't connect to the server: %v", err)
+	}
+	defer connOther.Close()
+	response := sendData(t, connOther, "w003HelloOther\n")
+
+	if !strings.HasPrefix(response, "e") {
+		t.Fatalf("unexpected server response: %s", response)
+	}
+}
+
+func TestReadTimeout(t *testing.T) {
+	conn := runServer(t)
+	defer conn.Close()
+
+	sendData(t, conn, "w003HelloTimeout\n")
+
+	response := sendData(t, conn, "r003\n")
+
+	if response != "v003HelloTimeout\n" {
 		t.Fatalf("unexpected server response: %s", response)
 	}
 }

@@ -75,9 +75,9 @@ If the owner does not write on this slot for a certain time (timeout), it will l
 
 The timeout can be configured:
 
-|Config      |Value |
-|------------|------|
-|timeout     |Timeout value configured in seconds. It can be a part of a second, for example a value of 0.2 represents a 200ms timeout.|
+|Config      |Value                               |
+|------------|------------------------------------|
+|timeout     |Timeout value configured in seconds.|
 
 All clients can read from this slot, but only the owner can write. If any other client tries to write it will fail. If there is no owner, the first client that writes becomes the owner.
 

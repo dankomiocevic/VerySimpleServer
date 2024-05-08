@@ -56,14 +56,22 @@ func handleUserConnection(c net.Conn, slots [1000]Slot) {
 			continue
 		}
 
+		var value string
 		if msg.command == 'w' {
-			current_slot.write(msg.value)
+			value, err = current_slot.write(msg.value, c)
+
+			if err != nil {
+				c.Write([]byte("e\n"))
+				continue
+			}
+		} else {
+			value = current_slot.read()
 		}
 
 		var sb strings.Builder
 		sb.WriteString("v")
 		sb.WriteString(fmt.Sprintf("%03d", msg.slot))
-		sb.WriteString(current_slot.read())
+		sb.WriteString(value)
 		sb.WriteString("\n")
 		c.Write([]byte(sb.String()))
 	}

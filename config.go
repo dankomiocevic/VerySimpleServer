@@ -31,11 +31,10 @@ func configureSlots(conf map[interface{}]interface{}) [1000]Slot {
 		value, ok := conf[key]
 		if ok {
 			// Assert this is a map
-			value_map, ok := value.(map[string]interface{})
+			valueMap, ok := value.(map[string]interface{})
 			if ok {
-				if value_map["kind"] == "simple_memory" {
-					slots[i] = &memory_slot{value: ""}
-				}
+				slot, _ := getSlot(valueMap)
+				slots[i] = slot
 			}
 		}
 	}

@@ -1,13 +1,14 @@
-package main
+package config
 
 import (
 	"fmt"
 	"os"
 
+	"github.com/dankomiocevic/VerySimpleServer/internal/slots"
 	"gopkg.in/yaml.v3"
 )
 
-func loadConfig(filename string) (map[interface{}]interface{}, error) {
+func LoadConfig(filename string) (map[interface{}]interface{}, error) {
 	m := make(map[interface{}]interface{})
 
 	// Open config file
@@ -23,8 +24,8 @@ func loadConfig(filename string) (map[interface{}]interface{}, error) {
 	return m, nil
 }
 
-func configureSlots(conf map[interface{}]interface{}) [1000]Slot {
-	slots := [1000]Slot{}
+func ConfigureSlots(conf map[interface{}]interface{}) [1000]slots.Slot {
+	slotsArray := [1000]slots.Slot{}
 
 	for i := 0; i < 1000; i++ {
 		key := fmt.Sprintf("slot_%03d", i)
@@ -33,11 +34,11 @@ func configureSlots(conf map[interface{}]interface{}) [1000]Slot {
 			// Assert this is a map
 			valueMap, ok := value.(map[string]interface{})
 			if ok {
-				slot, _ := getSlot(valueMap)
-				slots[i] = slot
+				slot, _ := slots.GetSlot(valueMap)
+				slotsArray[i] = slot
 			}
 		}
 	}
 
-	return slots
+	return slotsArray
 }

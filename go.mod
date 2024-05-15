@@ -1,4 +1,4 @@
-module gitub.com/dankomiocevic/VerySimpleServer
+module github.com/dankomiocevic/VerySimpleServer
 
 go 1.22.2
 

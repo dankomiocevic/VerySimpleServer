@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ func TestConfigureSlot(t *testing.T) {
 	slot_one["kind"] = "simple_memory"
 	config["slot_000"] = slot_one
 
-	response := configureSlots(config)
+	response := ConfigureSlots(config)
 
 	if response[0] == nil {
 		t.Fatalf("slot zero not configured: %s", response)
@@ -26,7 +26,7 @@ func TestConfigureTimeoutSlot(t *testing.T) {
 	slot_one["timeout"] = 50
 	config["slot_000"] = slot_one
 
-	response := configureSlots(config)
+	response := ConfigureSlots(config)
 
 	if response[0] == nil {
 		t.Fatalf("slot zero not configured: %s", response)
@@ -40,7 +40,7 @@ func TestNotConfigureSlot(t *testing.T) {
 	slot_one["kind"] = "simple_memory"
 	config["slot_000"] = slot_one
 
-	response := configureSlots(config)
+	response := ConfigureSlots(config)
 
 	for i := 1; i < 1000; i++ {
 		if response[i] != nil {
@@ -56,7 +56,7 @@ func TestConfigureUnknownType(t *testing.T) {
 	slot_one["kind"] = "unknown"
 	config["slot_000"] = slot_one
 
-	response := configureSlots(config)
+	response := ConfigureSlots(config)
 
 	if response[0] != nil {
 		t.Fatalf("slot zero should not be configured: %s", response)

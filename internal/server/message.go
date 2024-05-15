@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"errors"
@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-type message struct {
-	command byte
-	slot    int
-	value   string
+type Message struct {
+	Command byte
+	Slot    int
+	Value   string
 }
 
-func ParseMessage(size int, buf []byte) (*message, error) {
+func ParseMessage(size int, buf []byte) (*Message, error) {
 	if buf[size-1] != '\n' {
 		return nil, errors.New("Message is malformed")
 	}
@@ -42,5 +42,5 @@ func ParseMessage(size int, buf []byte) (*message, error) {
 		value = input[4:]
 	}
 
-	return &message{command: []byte(command)[0], slot: slot, value: value}, nil
+	return &Message{Command: []byte(command)[0], Slot: slot, Value: value}, nil
 }

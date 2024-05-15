@@ -1,4 +1,4 @@
-package main
+package slots
 
 import (
 	"errors"
@@ -10,8 +10,8 @@ import (
 )
 
 type Slot interface {
-	read() string
-	write(string, net.Conn) (string, error)
+	Read() string
+	Write(string, net.Conn) (string, error)
 }
 
 type memorySlot struct {
@@ -19,11 +19,11 @@ type memorySlot struct {
 	mu    sync.Mutex
 }
 
-func (m *memorySlot) read() string {
+func (m *memorySlot) Read() string {
 	return m.value
 }
 
-func (m *memorySlot) write(data string, from net.Conn) (string, error) {
+func (m *memorySlot) Write(data string, from net.Conn) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -39,11 +39,11 @@ type timeoutSlot struct {
 	mu      sync.Mutex
 }
 
-func (m *timeoutSlot) read() string {
+func (m *timeoutSlot) Read() string {
 	return m.value
 }
 
-func (m *timeoutSlot) write(data string, from net.Conn) (string, error) {
+func (m *timeoutSlot) Write(data string, from net.Conn) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -66,7 +66,7 @@ func (m *timeoutSlot) write(data string, from net.Conn) (string, error) {
 	return "", errors.New("Permission denied to write slot")
 }
 
-func getSlot(config map[string]interface{}) (Slot, error) {
+func GetSlot(config map[string]interface{}) (Slot, error) {
 	kind := config["kind"]
 
 	if kind == "simple_memory" {

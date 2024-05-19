@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bufio"
@@ -6,11 +6,34 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/dankomiocevic/VerySimpleServer/internal/slots"
 )
 
-func runServer(t *testing.T) net.Conn {
+func generateConfig() [1000]slots.Slot {
+	slotsArray := [1000]slots.Slot{}
+
+	config := make(map[string]interface{})
+	config["kind"] = "simple_memory"
+
+	slot_zero, _ := slots.GetSlot(config)
+	slotsArray[0] = slot_zero
+	slot_one, _ := slots.GetSlot(config)
+	slotsArray[1] = slot_one
+	slot_two, _ := slots.GetSlot(config)
+	slotsArray[2] = slot_two
+
+	config["kind"] = "timeout_memory"
+	config["timeout"] = 60
+	slot_three, _ := slots.GetSlot(config)
+	slotsArray[3] = slot_three
+
+	return slotsArray
+}
+
+func runServer(t *testing.T) (*Server, net.Conn) {
 	// start the TCP Server
-	go main()
+	s := NewServer("localhost:9090", generateConfig())
 
 	// wait for the TCP Server to start
 	time.Sleep(time.Duration(100) * time.Millisecond)
@@ -21,7 +44,7 @@ func runServer(t *testing.T) net.Conn {
 		t.Fatalf("couldn't connect to the server: %v", err)
 	}
 
-	return conn
+	return s, conn
 }
 
 func sendData(t *testing.T, conn net.Conn, data string) string {
@@ -40,7 +63,8 @@ func sendData(t *testing.T, conn net.Conn, data string) string {
 }
 
 func TestWrite(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	response := sendData(t, conn, "w000Hello\n")
@@ -51,7 +75,8 @@ func TestWrite(t *testing.T) {
 }
 
 func TestWriteInOtherSlot(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	response := sendData(t, conn, "w001Hello\n")
@@ -62,7 +87,8 @@ func TestWriteInOtherSlot(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	// First we store a value
@@ -77,7 +103,8 @@ func TestRead(t *testing.T) {
 }
 
 func TestUnsupportedCommand(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	response := sendData(t, conn, "a000Hello\n")
@@ -87,7 +114,8 @@ func TestUnsupportedCommand(t *testing.T) {
 }
 
 func TestMessageTooLong(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	response := sendData(t, conn, "w000HelloWithAReallyLongMessageThatShouldBeWrong\n")
@@ -98,7 +126,8 @@ func TestMessageTooLong(t *testing.T) {
 }
 
 func TestMessageTooShort(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	response := sendData(t, conn, "r0\n")
@@ -108,7 +137,8 @@ func TestMessageTooShort(t *testing.T) {
 }
 
 func TestMessageNotTerminated(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	response := sendData(t, conn, "r0")
@@ -118,7 +148,8 @@ func TestMessageNotTerminated(t *testing.T) {
 }
 
 func TestReadInANonConfiguredSlot(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	response := sendData(t, conn, "r123")
@@ -130,7 +161,8 @@ func TestReadInANonConfiguredSlot(t *testing.T) {
 // Tests for timeout memory slot
 
 func TestWriteTimeoutMemory(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	response := sendData(t, conn, "w003HelloTimeout\n")
@@ -141,7 +173,8 @@ func TestWriteTimeoutMemory(t *testing.T) {
 }
 
 func TestWriteTimeoutNotOwner(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	sendData(t, conn, "w003HelloOwner\n")
@@ -160,7 +193,8 @@ func TestWriteTimeoutNotOwner(t *testing.T) {
 }
 
 func TestReadTimeout(t *testing.T) {
-	conn := runServer(t)
+	s, conn := runServer(t)
+	defer s.Stop()
 	defer conn.Close()
 
 	sendData(t, conn, "w003HelloTimeout\n")

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/dankomiocevic/VerySimpleServer/internal/config"
 	"github.com/dankomiocevic/VerySimpleServer/internal/slots"
 )
 
@@ -17,17 +18,17 @@ type Server struct {
 	wg         sync.WaitGroup
 }
 
-func NewServer(addr string, slotsArray [1000]slots.Slot) *Server {
+func NewServer(config *config.Config) *Server {
 	s := &Server{
 		quit: make(chan interface{}),
 	}
 
-	l, err := net.Listen("tcp", addr)
+	l, err := net.Listen("tcp", config.TcpAddr)
 	if err != nil {
 		panic(err)
 	}
 	s.listener = l
-	s.slotsArray = slotsArray
+	s.slotsArray = config.Slots
 	s.wg.Add(1)
 
 	go s.serve()

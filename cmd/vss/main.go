@@ -1,31 +1,27 @@
+// Package main contains the root of all commands.
 package main
 
 import (
-	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/dankomiocevic/VerySimpleServer/internal/config"
-	"github.com/dankomiocevic/VerySimpleServer/internal/server"
+	"github.com/dankomiocevic/VerySimpleServer/cmd"
+	"github.com/dankomiocevic/VerySimpleServer/cmd/benchmark"
+	"github.com/dankomiocevic/VerySimpleServer/cmd/run"
 )
 
 func main() {
-	fmt.Println("Loading config..")
-	conf, err := config.LoadConfig("../../example_config.yml")
-	if err != nil {
-		return
+	rootCmd := cmd.NewRootCommand()
+
+	runCmd := run.NewRunCommand()
+	rootCmd.AddCommand(runCmd)
+
+	benchmarkCmd := benchmark.NewBenchmarkCommand()
+	rootCmd.AddCommand(benchmarkCmd)
+
+	versionCmd := cmd.NewVersionCommand()
+	rootCmd.AddCommand(versionCmd)
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
 	}
-
-	fmt.Println("Initializing slots..")
-	slotsArray := config.ConfigureSlots(conf)
-
-	fmt.Println("Starting server..")
-	s := server.NewServer("localhost:9090", slotsArray)
-	defer s.Stop()
-
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
-	<-done
-	fmt.Println("Shutting down server..")
 }

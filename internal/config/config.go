@@ -2,43 +2,51 @@ package config
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/dankomiocevic/VerySimpleServer/internal/slots"
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/viper"
 )
 
-func LoadConfig(filename string) (map[interface{}]interface{}, error) {
-	m := make(map[interface{}]interface{})
-
-	// Open config file
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	err = yaml.Unmarshal([]byte(data), &m)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
+type Config struct {
+	TcpAddr string
+	Slots   [1000]slots.Slot
 }
 
-func ConfigureSlots(conf map[interface{}]interface{}) [1000]slots.Slot {
-	slotsArray := [1000]slots.Slot{}
+func DefaultConfig() *Config {
+	return &Config{
+		TcpAddr: "localhost:9090",
+		Slots:   [1000]slots.Slot{},
+	}
+}
 
-	for i := 0; i < 1000; i++ {
-		key := fmt.Sprintf("slot_%03d", i)
-		value, ok := conf[key]
-		if ok {
-			// Assert this is a map
-			valueMap, ok := value.(map[string]interface{})
-			if ok {
-				slot, _ := slots.GetSlot(valueMap)
-				slotsArray[i] = slot
-			}
+func LoadConfig() (*Config, error) {
+	config := DefaultConfig()
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, fmt.Errorf("failed to load server config: %w", err)
 		}
 	}
 
-	return slotsArray
+	if err := viper.Unmarshal(config); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal server config: %w", err)
+	}
+
+	config.ConfigureSlots()
+	return config, nil
+}
+
+func (c *Config) ConfigureSlots() {
+	for i := 0; i < 1000; i++ {
+		key := fmt.Sprintf("slot_%03d", i)
+		if viper.IsSet(key) {
+			slot, _ := slots.GetSlot(viper.Sub(key))
+			c.Slots[i] = slot
+		}
+	}
+}
+
+func (c *Config) Verify() error {
+	return nil
 }

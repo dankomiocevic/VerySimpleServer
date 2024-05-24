@@ -2,63 +2,67 @@ package config
 
 import (
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestConfigureSlot(t *testing.T) {
-	config := make(map[interface{}]interface{})
-	slot_one := make(map[string]interface{})
+	viper.Reset()
 
-	slot_one["kind"] = "simple_memory"
-	config["slot_000"] = slot_one
+	viper.Set("slot_000.kind", "simple_memory")
 
-	response := ConfigureSlots(config)
+	config := DefaultConfig()
+	config.ConfigureSlots()
 
-	if response[0] == nil {
-		t.Fatalf("slot zero not configured: %s", response)
+	config, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("Failed loading configuration")
+	}
+
+	if config.Slots[0] == nil {
+		t.Fatalf("slot zero not configured")
 	}
 }
 
 func TestConfigureTimeoutSlot(t *testing.T) {
-	config := make(map[interface{}]interface{})
-	slot_one := make(map[string]interface{})
+	viper.Reset()
 
-	slot_one["kind"] = "timeout_memory"
-	slot_one["timeout"] = 50
-	config["slot_000"] = slot_one
+	viper.Set("slot_000.kind", "timeout_memory")
+	viper.Set("slot_000.timeout", 50)
 
-	response := ConfigureSlots(config)
+	config := DefaultConfig()
+	config.ConfigureSlots()
 
-	if response[0] == nil {
-		t.Fatalf("slot zero not configured: %s", response)
+	if config.Slots[0] == nil {
+		t.Fatalf("slot zero not configured")
 	}
 }
 
 func TestNotConfigureSlot(t *testing.T) {
-	config := make(map[interface{}]interface{})
-	slot_one := make(map[string]interface{})
+	viper.Reset()
 
-	slot_one["kind"] = "simple_memory"
-	config["slot_000"] = slot_one
+	viper.Set("slot_000.kind", "simple_memory")
+	viper.Set("slot_000.timeout", 50)
 
-	response := ConfigureSlots(config)
+	config := DefaultConfig()
+	config.ConfigureSlots()
 
 	for i := 1; i < 1000; i++ {
-		if response[i] != nil {
-			t.Fatalf("slot %d should not be configured: %s", i, response)
+		if config.Slots[i] != nil {
+			t.Fatalf("slot %d should not be configured", i)
 		}
 	}
 }
 
 func TestConfigureUnknownType(t *testing.T) {
-	config := make(map[interface{}]interface{})
-	slot_one := make(map[string]interface{})
+	viper.Reset()
 
-	slot_one["kind"] = "unknown"
-	config["slot_000"] = slot_one
+	viper.Set("slot_000.kind", "unknown")
 
-	response := ConfigureSlots(config)
+	config := DefaultConfig()
+	config.ConfigureSlots()
 
-	if response[0] != nil {
-		t.Fatalf("slot zero should not be configured: %s", response)
+	if config.Slots[0] != nil {
+		t.Fatalf("slot zero should not be configured")
 	}
 }

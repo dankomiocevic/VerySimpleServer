@@ -7,33 +7,34 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dankomiocevic/VerySimpleServer/internal/config"
 	"github.com/dankomiocevic/VerySimpleServer/internal/slots"
+
+	"github.com/spf13/viper"
 )
 
-func generateConfig() [1000]slots.Slot {
-	slotsArray := [1000]slots.Slot{}
+func generateConfig() *config.Config {
+	c := config.DefaultConfig()
 
-	config := make(map[string]interface{})
-	config["kind"] = "simple_memory"
+	viper.Set("slot_000.kind", "simple_memory")
+	slot_zero, _ := slots.GetSlot(viper.Sub("slot_000"))
+	c.Slots[0] = slot_zero
+	slot_one, _ := slots.GetSlot(viper.Sub("slot_000"))
+	c.Slots[1] = slot_one
+	slot_two, _ := slots.GetSlot(viper.Sub("slot_000"))
+	c.Slots[2] = slot_two
 
-	slot_zero, _ := slots.GetSlot(config)
-	slotsArray[0] = slot_zero
-	slot_one, _ := slots.GetSlot(config)
-	slotsArray[1] = slot_one
-	slot_two, _ := slots.GetSlot(config)
-	slotsArray[2] = slot_two
+	viper.Set("slot_001.kind", "timeout_memory")
+	viper.Set("slot_001.timeout", 60)
+	slot_three, _ := slots.GetSlot(viper.Sub("slot_001"))
+	c.Slots[3] = slot_three
 
-	config["kind"] = "timeout_memory"
-	config["timeout"] = 60
-	slot_three, _ := slots.GetSlot(config)
-	slotsArray[3] = slot_three
-
-	return slotsArray
+	return c
 }
 
 func runServer(t *testing.T) (*Server, net.Conn) {
 	// start the TCP Server
-	s := NewServer("localhost:9090", generateConfig())
+	s := NewServer(generateConfig())
 
 	// wait for the TCP Server to start
 	time.Sleep(time.Duration(100) * time.Millisecond)
@@ -153,6 +154,17 @@ func TestReadInANonConfiguredSlot(t *testing.T) {
 	defer conn.Close()
 
 	response := sendData(t, conn, "r123")
+	if !strings.HasPrefix(response, "e") {
+		t.Fatalf("unexpected server response: %s", response)
+	}
+}
+
+func TestWriteInANonConfiguredSlot(t *testing.T) {
+	s, conn := runServer(t)
+	defer s.Stop()
+	defer conn.Close()
+
+	response := sendData(t, conn, "w123TEST")
 	if !strings.HasPrefix(response, "e") {
 		t.Fatalf("unexpected server response: %s", response)
 	}

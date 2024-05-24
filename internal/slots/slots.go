@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/spf13/cast"
+	"github.com/spf13/viper"
 )
 
 type Slot interface {
@@ -66,8 +66,8 @@ func (m *timeoutSlot) Write(data string, from net.Conn) (string, error) {
 	return "", errors.New("Permission denied to write slot")
 }
 
-func GetSlot(config map[string]interface{}) (Slot, error) {
-	kind := config["kind"]
+func GetSlot(v *viper.Viper) (Slot, error) {
+	kind := v.GetString("kind")
 
 	if kind == "simple_memory" {
 		return &memorySlot{value: ""}, nil
@@ -75,7 +75,7 @@ func GetSlot(config map[string]interface{}) (Slot, error) {
 
 	if kind == "timeout_memory" {
 		// TODO: validate this data
-		timeoutConfig, _ := cast.ToIntE(config["timeout"])
+		timeoutConfig := v.GetInt("timeout")
 		return &timeoutSlot{value: "", timeout: time.Duration(timeoutConfig) * time.Second, ttl: time.Time{}}, nil
 	}
 
